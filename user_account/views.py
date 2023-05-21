@@ -6,6 +6,8 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
+
+from .models import UserInfo
 # Create your views here.
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -13,11 +15,15 @@ def signup(request):
     if request.method == 'POST':
         content= json.loads(request.body)
         user = User.objects.create_user(
-            username=content['email'],
-            password=content['password'],
+            username = content['email'],
+            password = content['password'],
+        )
+        extended_user = UserInfo.objects.create(
+            user_id = user,
+            nickname = "test nickname"
         )
         auth.login(request, user)
-        return HttpResponse(json.dumps({'result': "true"}))
+        return HttpResponse(json.dumps({'result': "true", 'nickname': extended_user.nickname}))
     return HttpResponse(json.dumps({'result': "false"}))
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -29,7 +35,8 @@ def login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             auth.login(request, user)
-            return HttpResponse(json.dumps({'result': "true"}))
+            extended_user = UserInfo.objects.get(user_id_id=user)
+            return HttpResponse(json.dumps({'result': "true", 'nickname': extended_user.nickname}))
         else:
             return HttpResponse(json.dumps({'result': "false"}))
     else:
