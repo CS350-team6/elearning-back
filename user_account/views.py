@@ -17,8 +17,8 @@ def signup(request):
             password=content['password'],
         )
         auth.login(request, user)
-        return HttpResponse(json.dumps({'status': "Succeed"}))
-    return HttpResponse(json.dumps({'status': "Failed"}))
+        return HttpResponse(json.dumps({'result': "true"}))
+    return HttpResponse(json.dumps({'result': "false"}))
 
 @method_decorator(csrf_exempt, name="dispatch")
 def login(request):
@@ -29,15 +29,15 @@ def login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             auth.login(request, user)
-            return HttpResponse(json.dumps({'status': "Succeed"}))
+            return HttpResponse(json.dumps({'result': "true"}))
         else:
-            return HttpResponse(json.dumps({'status': "Failed"}))
+            return HttpResponse(json.dumps({'result': "false"}))
     else:
-        return HttpResponse(json.dumps({'status': "Failed"}))
+        return HttpResponse(json.dumps({'result': "false"}))
 
 def logout(request):
     auth.logout(request)
-    return HttpResponse(json.dumps({'status': "Succeed"}))
+    return HttpResponse(json.dumps({'result': "true"}))
 
 def home(request):
-    return HttpResponse(json.dumps({'status': "Succeed"}))
+    return HttpResponse(json.dumps({'result': "true"}))
