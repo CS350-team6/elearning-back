@@ -14,6 +14,8 @@ COPY pyproject.toml poetry.lock /code/
 RUN poetry config virtualenvs.create false
 RUN poetry install --only main --no-root --no-interaction
 COPY . /code
+RUN python code/manage.py makemigrations
+RUN python code/manage.py migrate
 
 EXPOSE 8000
 
