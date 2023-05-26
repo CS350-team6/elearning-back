@@ -25,7 +25,7 @@ SECRET_KEY = "django-insecure-07=!y^!vdk0#4cda57gm%7kyfrj26)869s$492y!8*2khrz+fv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["elearning-back.fly.dev"]
 
 # dev
 CORS_ORIGIN_ALLOW_ALL = True
