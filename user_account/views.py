@@ -6,9 +6,34 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
+import jwt
+from datetime import datetime, timedelta
+from django.conf import settings
 
-from .models import UserInfo
+from .models import UserInfo, JWTToken
 # Create your views here.
+
+def generate_jwt_token(user, user_id):
+    # Set the expiration time for the token (e.g., 1 day from now)
+    expiration = datetime.utcnow() + timedelta(days=1)
+
+    # Create the payload containing user information
+    payload = {
+        'user_id': user_id,
+        'exp': expiration,
+    }
+
+    # Generate the JWT token using the secret key defined in Django settings
+    token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+    JWT = JWTToken.objects.create(
+        token = token,
+        user = user
+    )
+
+    # Return the generated token as a string
+    return JWT
+    #jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+
 
 @method_decorator(csrf_exempt, name="dispatch")
 def signup(request):
@@ -18,8 +43,10 @@ def signup(request):
             username = content['email'],
             password = content['password'],
         )
+        new_jwt_token = generate_jwt_token(user, content['email'])
         extended_user = UserInfo.objects.create(
-            user_id = user,
+            user = user,
+            jwt_token = new_jwt_token,
             nickname = "test nickname"
         )
         auth.login(request, user)
