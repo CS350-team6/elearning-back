@@ -1,12 +1,18 @@
 from django.shortcuts import render, redirect
+import zipfile
+
 from django.contrib import auth
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.http import FileResponse
+from django.core.files.temp import NamedTemporaryFile
 import json
-
+import logging
+import os
+from django.http import JsonResponse
 from .models import UserInfo
 # Create your views here.
 
@@ -14,6 +20,7 @@ from .models import UserInfo
 def signup(request):
     if request.method == 'POST':
         content= json.loads(request.body)
+        logging.info(content)
         user = User.objects.create_user(
             username = content['email'],
             password = content['password'],
@@ -48,3 +55,30 @@ def logout(request):
 
 def home(request):
     return HttpResponse(json.dumps({'result': "true"}))
+
+@method_decorator(csrf_exempt, name="dispatch")
+def searchTest(request):
+    if request.method == 'POST':
+        
+        return HttpResponse(json.dumps({'result': "true", "title":["A","B","C"]}))
+    return HttpResponse(json.dumps({'result': "false"}))
+
+@method_decorator(csrf_exempt, name="dispatch")
+def uploadTest(request):
+    if request.method == 'POST':
+        content= json.loads(request.body)
+ 
+        return HttpResponse(json.dumps({'result': "true", "thumb":"path"}))
+    return HttpResponse(json.dumps({'result': "false"}))
+
+@method_decorator(csrf_exempt, name="dispatch")
+def videoTest(request):
+    if request.method == 'GET':
+        
+        lecture = request.GET.get('lecture')
+      
+        video_dir = '../../Downloads/'
+        video_files = [f for f in os.listdir(video_dir) if lecture in f and f.endswith('.mp4')]
+        print(video_files)
+        return JsonResponse(video_files, safe=False)
+            
