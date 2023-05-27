@@ -5,12 +5,11 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-import json
-import jwt
+import json, jwt
 from datetime import datetime, timedelta
 from django.conf import settings
-
 from .models import UserInfo, JWTToken
+from django.core.mail import send_mail
 # Create your views here.
 
 def generate_jwt_token(user, user_id):
@@ -124,4 +123,25 @@ def pwchange(request):
     else:
         return HttpResponse(json.dumps({'result': "false"}))
     
+@method_decorator(csrf_exempt, name="dispatch")
+def pwreset(request):
+    if request.method == 'POST':
+        content= json.loads(request.body)
+        token= content['jwt'].encode('utf-8')
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        try:
+            user = User.objects.get(username=payload["user_id"])
+        except:
+            return HttpResponse(json.dumps({'result': "false"}))
+        
+        if user.username==content["userId"]:
+            temp_password = User.objects.make_random_password()
+            user.set_password(temp_password)
+            user.save()
+            send_mail(subject="Email for password reset",message=f"Your password is reset to {temp_password}", from_email="e.learning.platform.team@gmail.com", recipient_list=[user.username],fail_silently=False)
+            return HttpResponse(json.dumps({'result': "true"}))
+    else:
+        return HttpResponse(json.dumps({'result': "false"}))
+
+
 
