@@ -77,13 +77,12 @@ from django.db import models
 #         verbose_name_plural = 'watchlists'
 
 class Video(models.Model):
-    video_id = models.AutoField(primary_key=True)
     # topic_id = models.ForeignKey(Topic, on_delete=models.CASCADE, related_name='topic')
-    instructor_id = models.ForeignKey('user_account.Instructor', on_delete=models.CASCADE, related_name='instructor')
+    # instructor_id = models.ForeignKey('user_account.Instructor', on_delete=models.CASCADE, related_name='instructor')
     title = models.CharField(max_length=100)
-    description = models.TextField()
-    release_date = models.DateField()
-    play_count = models.IntegerField()
+    description = models.TextField(default='')
+    play_count = models.IntegerField(default=0)
+    like_count = models.IntegerField(default=0)
     video_file = models.FileField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
