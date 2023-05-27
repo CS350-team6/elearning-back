@@ -67,12 +67,26 @@ INSTALLED_APPS = [
 
     # 3rd party apps
     "rest_framework",
+    "drf_spectacular",
     
     # local apps
     "fly",
     "user_account",
     "uploader"
 ]
+
+REST_FRAMEWORK = {
+    # YOUR SETTINGS
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Efficient E-learning API',
+    'DESCRIPTION': 'API for Efficient E-learning platform',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
