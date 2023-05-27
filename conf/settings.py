@@ -53,7 +53,7 @@ ALLOWED_HOSTS = [
 # dev
 CORS_ORIGIN_ALLOW_ALL = True
 
-#CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://elearning-back.fly.dev"]
 
 # Application definition
 
