@@ -1,4 +1,6 @@
 from django.shortcuts import render, redirect
+import zipfile
+
 from django.contrib import auth
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
@@ -10,6 +12,11 @@ from datetime import datetime, timedelta
 from django.conf import settings
 from .models import UserInfo, JWTToken
 from django.core.mail import send_mail
+from django.http import FileResponse
+from django.core.files.temp import NamedTemporaryFile
+import logging
+import os
+from django.http import JsonResponse
 # Create your views here.
 
 def generate_jwt_token(user, user_id):
@@ -42,7 +49,7 @@ def signup(request):
             user = User.objects.create_user(
             username = content['userId'],
             password = content['userPw'],
-        )
+            logging.info(content)
         except:
             return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"})) # Check if the user already exists
         new_jwt_token = generate_jwt_token(user, content['userId'])
@@ -143,5 +150,28 @@ def pwreset(request):
     else:
         return HttpResponse(json.dumps({'result': "false"}))
 
+@method_decorator(csrf_exempt, name="dispatch")
+def searchTest(request):
+    if request.method == 'POST':
+        
+        return HttpResponse(json.dumps({'result': "true", "title":["A","B","C"]}))
+    return HttpResponse(json.dumps({'result': "false"}))
 
+@method_decorator(csrf_exempt, name="dispatch")
+def uploadTest(request):
+    if request.method == 'POST':
+        content= json.loads(request.body)
+        print(content)
+        return HttpResponse(json.dumps({'result': "true", "thumb":"path"}))
+    return HttpResponse(json.dumps({'result': "false"}))
 
+@method_decorator(csrf_exempt, name="dispatch")
+def videoTest(request):
+    if request.method == 'GET':
+        
+        lecture = request.GET.get('lecture')
+      
+        video_dir = '../../Downloads/'
+        video_files = [f for f in os.listdir(video_dir) if lecture in f and f.endswith('.mp4')]
+        print(video_files)
+        return JsonResponse(video_files, safe=False)
