@@ -49,6 +49,7 @@ def signup(request):
             user = User.objects.create_user(
             username = content['userId'],
             password = content['userPw'],
+            )
             logging.info(content)
         except:
             return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"})) # Check if the user already exists
