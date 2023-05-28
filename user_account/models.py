@@ -24,6 +24,7 @@ class UserInfo(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
     jwt_token = models.ForeignKey(JWTToken, on_delete=models.SET_NULL, null=True)
     nickname = models.CharField(max_length=50)
+    validation_code = models.CharField(max_length=30, null=True)
 
     def __str__(self):
         return f"{self.user_id} - {self.nickname}"
