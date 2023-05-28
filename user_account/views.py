@@ -50,7 +50,7 @@ def signup(request):
             username = content['userId'],
             password = content['userPw'],
             )
-            logging.info(content)
+            #logging.info(content)
         except:
             return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"})) # Check if the user already exists
         new_jwt_token = generate_jwt_token(user, content['userId'])
@@ -59,7 +59,10 @@ def signup(request):
             jwt_token = new_jwt_token,
             nickname = "test nickname"
         )
-        token_string = str(new_jwt_token.token).split("'")[1]
+        #print("TEST")
+        #print(str(new_jwt_token.token))
+        #token_string = str(new_jwt_token.token).split("'")[1]
+        token_string = str(new_jwt_token.token)
         auth.login(request, user)
         return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
     return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
@@ -74,7 +77,8 @@ def login(request):
         if user is not None:
             auth.login(request, user)
             extended_user = UserInfo.objects.get(user_id=user)
-            token_string = str(extended_user.jwt_token.token).split("'")[1]
+            #token_string = str(extended_user.jwt_token.token).split("'")[1]
+            token_string = str(extended_user.jwt_token.token)
             return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
         else:
             return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
