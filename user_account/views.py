@@ -67,7 +67,7 @@ def searchTest(request):
 def uploadTest(request):
     if request.method == 'POST':
         content= json.loads(request.body)
- 
+        print(content)
         return HttpResponse(json.dumps({'result': "true", "thumb":"path"}))
     return HttpResponse(json.dumps({'result': "false"}))
 

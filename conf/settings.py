@@ -25,12 +25,12 @@ SECRET_KEY = "django-insecure-07=!y^!vdk0#4cda57gm%7kyfrj26)869s$492y!8*2khrz+fv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["elearning-back.fly.dev"]
+ALLOWED_HOSTS = ["elearning-back.fly.dev",'127.0.0.1']
 
 # dev
 CORS_ORIGIN_ALLOW_ALL = True
 
-# CSRF_TRUSTED_ORIGINS = ["http://localhost:8000"]
+CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000"]
 
 # Application definition
 
