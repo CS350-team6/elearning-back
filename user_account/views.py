@@ -14,27 +14,60 @@ from django.http import FileResponse, JsonResponse
 from django.core.files.temp import NamedTemporaryFile
 # Create your views here.
 
-def generate_jwt_token(user, user_id):
-    # Set the expiration time for the token (e.g., 1 day from now)
-    expiration = datetime.utcnow() + timedelta(days=1)
+def check_validity(request): ## If true => go ahead request, elif token => give back re-publish access token, else (None)=> login again
+    access_token = request.COOKIES.get('token').encode('utf-8') # Access token stored in client cookie
+    content= json.loads(request.body)
+    refresh_token= content['jwt'].encode('utf-8')               # Refresh token stored in client local storage (Managing: front side work)
+    
+    if access_token.is_valid(): # Check if the access token is valid
+        return True
+    else:
+        if refresh_token.is_valid():  # Check if the refresh token is valid to re-publish the access token
+            payload = jwt.decode(refresh_token, settings.SECRET_KEY, algorithms=["HS256"])
+            try:
+                user = User.objects.get(username=payload["user_id"])
+            except:
+                return None
 
-    # Create the payload containing user information
+            if user is not None:
+                extended_user = UserInfo.objects.get(user_id=user)
+                if extended_user.jwt_token == refresh_token:
+                    new_access_token = generate_access_token(user, payload["user_id"])
+                    return new_access_token  # Return new access token
+            else:
+                return None
+        else:
+            return None
+
+def generate_access_token(user, user_id):
+    expiration = datetime.utcnow() + timedelta(minutes=30)
+
     payload = {
         'user_id': user_id,
         'exp': expiration,
     }
 
-    # Generate the JWT token using the secret key defined in Django settings
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
     JWT = JWTToken.objects.create(
         token = token,
         user = user
     )
-
-    # Return the generated token as a string
     return JWT
-    #jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
 
+def generate_refresh_token(user, user_id):
+    expiration = datetime.utcnow() + timedelta(days=14)
+
+    payload = {
+        'user_id': user_id,
+        'exp': expiration,
+    }
+
+    token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+    JWT = JWTToken.objects.create(
+        token = token,
+        user = user
+    )
+    return JWT
 
 @method_decorator(csrf_exempt, name="dispatch")
 def signup(request):
@@ -45,22 +78,16 @@ def signup(request):
             username = content['userId'],
             password = content['userPw'],
             )
-            #logging.info(content)
         except:
-            return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"})) # Check if the user already exists
-        new_jwt_token = generate_jwt_token(user, content['userId'])
+            return HttpResponse(json.dumps({'result': "false"})) # Check if the user already exists
+        
         extended_user = UserInfo.objects.create(
             user = user,
-            jwt_token = new_jwt_token,
+            jwt_token = None,
             nickname = "test nickname"
         )
-        #print("TEST")
-        #print(str(new_jwt_token.token))
-        #token_string = str(new_jwt_token.token).split("'")[1]
-        token_string = str(new_jwt_token.token)
-        auth.login(request, user)
-        return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
-    return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
+        return HttpResponse(json.dumps({'result': "true"}))
+    return HttpResponse(json.dumps({'result': "false"}))
 
 @method_decorator(csrf_exempt, name="dispatch")
 def login(request):
@@ -71,51 +98,97 @@ def login(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             auth.login(request, user)
+            access_token = generate_access_token(user, content['userId'])
+            refresh_token = generate_refresh_token(user, content['userId'])
+
             extended_user = UserInfo.objects.get(user_id=user)
-            #token_string = str(extended_user.jwt_token.token).split("'")[1]
-            token_string = str(extended_user.jwt_token.token)
-            return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
+            extended_user.jwt_token = refresh_token
+            extended_user.save()
+
+            access_token_string = access_token.token.decode('utf-8')
+            response = HttpResponse(json.dumps({'result': "true", 'jwt': refresh_token.token.decode('utf-8')}))
+            response.set_cookie('token', access_token_string, httponly=True, samesite='Strict')
+            return response                             ## Store access token in client cookie and store refresh token (jwt) in client local storage
         else:
-            return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
+            return HttpResponse(json.dumps({'result': "false", 'jwt': "Invalid"}))
     else:
-        return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
+        return HttpResponse(json.dumps({'result': "false", 'jwt': "Invalid"}))
 
 @method_decorator(csrf_exempt, name="dispatch")
 def logout(request):
     if request.method == 'PUT':
         auth.logout(request)
-        return HttpResponse(json.dumps({'result': "true"}))
+        token = request.COOKIES.get('token').encode('utf-8')
+
+        access_token = JWTToken.objects.get(token=token)
+        access_token.blacklist = True
+        
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        user = User.objects.get(username=payload["user_id"])
+        extended_user = UserInfo.objects.get(user_id=user)
+        token_object = JWTToken.objects.get(token=extended_user.jwt_token.token)
+        token_object.delete()
+        extended_user.jwt_token = None
+
+        response = HttpResponse(json.dumps({'result': "true"}))
+        response.delete_cookie('token')
+        return response
     else:
         return HttpResponse(json.dumps({'result': "false"}))
 
 @method_decorator(csrf_exempt, name="dispatch")
 def withdraw_account(request):
+    valid = check_validity(request)
+    response = HttpResponse()
+
+    if valid == True:
+        pass
+    elif valid == None:
+        return logout(request)
+    else:
+        new_access_token_string = valid.decode('utf-8')
+        response.set_cookie('token', new_access_token_string, httponly=True, samesite='Strict')
+
     if request.method == 'DELETE':
-        content= json.loads(request.body)
-        token= content['jwt'].encode('utf-8')
+        if valid == True:
+            token = request.COOKIES.get('token').encode('utf-8')
+        else:
+            token = valid.encode('utf-8')
+        
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         try:
             user = User.objects.get(username=payload["user_id"])
         except:
-            return HttpResponse(json.dumps({'result': "false"}))
+            response.content = json.dumps({'result': "false"})
+            return response
         
         if user is not None:
             extended_user = UserInfo.objects.get(user_id=user)
             extended_user.jwt_token.delete()
             extended_user.user.delete()
             extended_user.delete()
-            return HttpResponse(json.dumps({'result': "true"}))
+            response.content = json.dumps({'result': "true"})
+            return response
         else:
-            return HttpResponse(json.dumps({'result': "false"}))
+            response.content = json.dumps({'result': "false"})
+            return response
     else:
-        return HttpResponse(json.dumps({'result': "false"}))
-
-@method_decorator(csrf_exempt, name="dispatch")
-def home(request):
-    return HttpResponse(json.dumps({'result': "true"}))
+        response.content = json.dumps({'result': "false"})
+        return response
 
 @method_decorator(csrf_exempt, name="dispatch")
 def pwchange(request):
+    valid = check_validity(request)
+    response = HttpResponse()
+
+    if valid == True:
+        pass
+    elif valid == None:
+        return logout(request)
+    else:
+        new_access_token_string = valid.decode('utf-8')
+        response.set_cookie('token', new_access_token_string, httponly=True, samesite='Strict')
+
     if request.method == 'PUT':
         content= json.loads(request.body)
         token= content['jwt'].encode('utf-8')
@@ -124,21 +197,36 @@ def pwchange(request):
         if user is not None:
             user.set_password(content["newPw"])
             user.save()
-            return HttpResponse(json.dumps({'result': "true"}))
+            response.content= json.dumps({'result': "true"})
+            return response
         else:
-            return HttpResponse(json.dumps({'result': "false"}))
+            response.content= json.dumps({'result': "false"})
+            return response
     else:
-        return HttpResponse(json.dumps({'result': "false"}))
+        response.content= json.dumps({'result': "false"})
+        return response
     
 @method_decorator(csrf_exempt, name="dispatch")
 def pwreset(request):
+    valid = check_validity(request)
+    response = HttpResponse()
+
+    if valid == True:
+        pass
+    elif valid == None:
+        return logout(request)
+    else:
+        new_access_token_string = valid.decode('utf-8')
+        response.set_cookie('token', new_access_token_string, httponly=True, samesite='Strict')
+
     if request.method == 'POST':
         content= json.loads(request.body)
         username = content['userId']
         try:
             user = User.objects.get(username=username)
         except:
-            return HttpResponse(json.dumps({'result': "false"}))
+            response.content= json.dumps({'result': "false"})
+            return response
         
         if user is not None:
             validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
@@ -147,11 +235,14 @@ def pwreset(request):
             extended_user.save()
             pwreset_page = f'http://localhost:8000/user_account/pwreset_with_validation/?user={username}&validation={validation_code}'         ##### The url must be changed before release.!!!!!!!!!!!!!!!!
             send_mail(subject="Email for password reset",message=f"If you are requested to change your password, refer to here {pwreset_page}\n Otherwise, ignore it", from_email="e.learning.platform.team@gmail.com", recipient_list=[user.username],fail_silently=False)
-            return HttpResponse(json.dumps({'result': "true"}))
+            response.content= json.dumps({'result': "true"})
+            return response
         else:
-            return HttpResponse(json.dumps({'result': "false"}))
+            response.content= json.dumps({'result': "false"})
+            return response
     else:
-        return HttpResponse(json.dumps({'result': "false"}))
+        response.content= json.dumps({'result': "false"})
+        return response
 
 @method_decorator(csrf_exempt, name="dispatch")
 def pwreset_with_validation(request):
@@ -176,6 +267,13 @@ def pwreset_with_validation(request):
             return HttpResponse(json.dumps({'result': "Invaild page"}))
     else:
         return HttpResponse(json.dumps({'result': "Invaild page"}))
+
+@method_decorator(csrf_exempt, name="dispatch")
+def islogin(request):
+    if check_validity(request) is not None:
+        return HttpResponse(json.dumps({'result': "true"}))
+    else:
+        return HttpResponse(json.dumps({'result': "false"}))
 
 @method_decorator(csrf_exempt, name="dispatch")
 def searchTest(request):

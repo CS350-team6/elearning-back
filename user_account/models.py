@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import User
+from django.conf import settings
+import jwt
 
 def get_default_user():
     return None
@@ -10,9 +12,10 @@ class JWTToken(models.Model):
     token = models.CharField(max_length=255, unique=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    blacklist = models.BooleanField(default=False)
     
     def is_valid(self):
-        return not self.is_expired()
+        return (not self.is_expired()) and (not self.blacklist)
 
     def is_expired(self):
         return self.created_at < timezone.now() - timedelta(days=1)
