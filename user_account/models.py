@@ -7,7 +7,7 @@ def get_default_user():
     return None
 
 class JWTToken(models.Model):
-    token = models.CharField(max_length=255, unique=True)
+    token = models.BinaryField(max_length=255, unique=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     

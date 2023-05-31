@@ -52,12 +52,9 @@ def signup(request):
         extended_user = UserInfo.objects.create(
             user = user,
             jwt_token = new_jwt_token,
-            nickname = "test nickname"
+            nickname = user.username.split("@")[0]
         )
-        #print("TEST")
-        #print(str(new_jwt_token.token))
-        #token_string = str(new_jwt_token.token).split("'")[1]
-        token_string = str(new_jwt_token.token)
+        token_string = new_jwt_token.token.decode('utf-8')
         auth.login(request, user)
         return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
     return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
@@ -72,8 +69,7 @@ def login(request):
         if user is not None:
             auth.login(request, user)
             extended_user = UserInfo.objects.get(user_id=user)
-            #token_string = str(extended_user.jwt_token.token).split("'")[1]
-            token_string = str(extended_user.jwt_token.token)
+            token_string = extended_user.jwt_token.token.decode('utf-8')
             return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
         else:
             return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
@@ -169,6 +165,8 @@ def pwreset_with_validation(request):
                 temp_password = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
                 user.set_password(temp_password)
                 user.save()
+                extended_user.validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+                extended_user.save()
                 return HttpResponse(json.dumps({'result': f'Your password is reset to {temp_password}'}))
             else:
                 return HttpResponse(json.dumps({'result': "Invaild page"}))
