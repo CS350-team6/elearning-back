@@ -27,7 +27,11 @@ AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_S3_FILE_OVERWRITE = False
 AWS_DEFAULT_ACL = None
 AWS_S3_VERIFY = True
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage' 
+DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_USE_TLS = True
+EMAIL_PORT = 587
 
 # environment variables
 try:
@@ -38,6 +42,9 @@ try:
     AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME")
     SECRET_KEY = env("SECRET_KEY")
     DEBUG = env("DEBUG")
+    EMAIL_HOST_USER = env("EMAIL_ID")
+    EMAIL_HOST_PASSWORD = env("EMAIL_PWD")
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 except:
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
@@ -46,6 +53,9 @@ except:
     AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
     SECRET_KEY = os.getenv("SECRET_KEY")
     DEBUG = os.getenv("DEBUG")
+    EMAIL_HOST_USER = os.getenv("EMAIL_ID")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PWD")
+    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 ALLOWED_HOSTS = [
     "elearning-back.fly.dev",
@@ -177,10 +187,3 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_USE_TLS = True
-EMAIL_PORT = 587
-EMAIL_HOST_USER = env("EMAIL_ID")
-EMAIL_HOST_PASSWORD = env("EMAIL_PWD")
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
