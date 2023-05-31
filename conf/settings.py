@@ -35,6 +35,8 @@ EMAIL_PORT = 587
 
 # environment variables
 try:
+    DATABASE_NAME = env("DATABASE_NAME")
+    DATABASE_PASSWORD = env("DATABASE_PASSWORD")
     AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
     AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
@@ -46,6 +48,8 @@ try:
     EMAIL_HOST_PASSWORD = env("EMAIL_PWD")
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 except:
+    DATABASE_NAME = os.getenv("DATABASE_NAME")
+    DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
     AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
     AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
@@ -137,8 +141,12 @@ WSGI_APPLICATION = "conf.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": DATABASE_NAME,
+        "USER": "admin",
+        "PASSWORD": DATABASE_PASSWORD,
+        "HOST": "database-1.cgvpngtvlda3.ap-northeast-2.rds.amazonaws.com",
+        "PORT": "3306",
     }
 }
 
