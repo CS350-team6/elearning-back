@@ -21,6 +21,7 @@ psycopg2-binary = "^2.9.6"
 dj-database-url = "^2.0.0"
 pymysql = "^1.0.3"
 mysqlclient = "^2.1.1"
+uwsgi = "^2.0.21"
 
 
 [build-system]
