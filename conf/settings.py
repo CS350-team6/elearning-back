@@ -74,7 +74,7 @@ ALLOWED_HOSTS = [
 # dev
 CORS_ORIGIN_ALLOW_ALL = True
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://elearning-back.fly.dev", "ec2-43-201-10-59.ap-northeast-2.compute.amazonaws.com"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://elearning-back.fly.dev", "https://ec2-43-201-10-59.ap-northeast-2.compute.amazonaws.com", "http://ec2-43-201-10-59.ap-northeast-2.compute.amazonaws.com"]
 
 # Application definition
 
@@ -155,7 +155,6 @@ DATABASES = {
     # "postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable"
     # "default": dj_database_url.parse("postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable", conn_max_age=600)
 }
-print(DATABASE_URL)
 
 
 # Password validation
