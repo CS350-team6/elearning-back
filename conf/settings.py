@@ -143,26 +143,26 @@ WSGI_APPLICATION = "conf.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-if os.getenv("DJANGO_DEVELOPMENT"):
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-        }
+# if os.getenv("DJANGO_DEVELOPMENT"):
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
-else:
-    DATABASES = {
-    #     "default": {
-    #         "ENGINE": "django.db.backends.mysql",
-    #         "NAME": DATABASE_NAME,
-    #         "USER": "admin",
-    #         "PASSWORD": DATABASE_PASSWORD,
-    #         "HOST": "database-1.cgvpngtvlda3.ap-northeast-2.rds.amazonaws.com",
-    #         "PORT": "3306",
-    #     }
-        # "postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable"
-        "default": dj_database_url.parse("postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable", conn_max_age=600)
-    }
+}
+# else:
+#     DATABASES = {
+#     #     "default": {
+#     #         "ENGINE": "django.db.backends.mysql",
+#     #         "NAME": DATABASE_NAME,
+#     #         "USER": "admin",
+#     #         "PASSWORD": DATABASE_PASSWORD,
+#     #         "HOST": "database-1.cgvpngtvlda3.ap-northeast-2.rds.amazonaws.com",
+#     #         "PORT": "3306",
+#     #     }
+#         # "postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable"
+#         "default": dj_database_url.parse("postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable", conn_max_age=600)
+#     }
 
 
 # Password validation
