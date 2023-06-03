@@ -5,6 +5,14 @@ FROM python:${PYTHON_VERSION}
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
+# RUN apt update
+# RUN apt install -y gnupg wget lsb-release
+# RUN cd /tmp
+# RUN wget https://dev.mysql.com/get/mysql-apt-config_0.8.22-1_all.deb
+# RUN dpkg -i mysql-apt-config*
+# RUN apt update
+# RUN apt install -y mysql-server
+
 RUN mkdir -p /code
 
 WORKDIR /code

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
+import dj_database_url
 from pathlib import Path
 from environ import Env
 
@@ -140,14 +141,15 @@ WSGI_APPLICATION = "conf.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": DATABASE_NAME,
-        "USER": "admin",
-        "PASSWORD": DATABASE_PASSWORD,
-        "HOST": "database-1.cgvpngtvlda3.ap-northeast-2.rds.amazonaws.com",
-        "PORT": "3306",
-    }
+    # "default": {
+    #     "ENGINE": "django.db.backends.mysql",
+    #     "NAME": DATABASE_NAME,
+    #     "USER": "admin",
+    #     "PASSWORD": DATABASE_PASSWORD,
+    #     "HOST": "database-1.cgvpngtvlda3.ap-northeast-2.rds.amazonaws.com",
+    #     "PORT": "3306",
+    # }
+    "default": dj_database_url.parse(os.getenv('DATABASE_URL'), conn_max_age=600)
 }
 
 
