@@ -36,6 +36,7 @@ EMAIL_PORT = 587
 
 # environment variables
 try:
+    DATABASE_URL = env('DATABASE_URL')
     DATABASE_NAME = env("DATABASE_NAME")
     DATABASE_PASSWORD = env("DATABASE_PASSWORD")
     AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
@@ -49,6 +50,7 @@ try:
     EMAIL_HOST_PASSWORD = env("EMAIL_PWD")
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 except:
+    DATABASE_URL = os.getenv('DATABASE_URL')
     DATABASE_NAME = os.getenv("DATABASE_NAME")
     DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
     AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
@@ -149,7 +151,7 @@ DATABASES = {
     #     "HOST": "database-1.cgvpngtvlda3.ap-northeast-2.rds.amazonaws.com",
     #     "PORT": "3306",
     # }
-    "default": dj_database_url.parse(os.getenv('DATABASE_URL'), conn_max_age=600)
+    "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
 }
 
 
