@@ -65,6 +65,7 @@ except:
     DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 ALLOWED_HOSTS = [
+    ".ap-northeast-2.compute.amazonaws.com",
     "elearning-back.fly.dev",
     "localhost",
     "127.0.0.1"
@@ -73,7 +74,7 @@ ALLOWED_HOSTS = [
 # dev
 CORS_ORIGIN_ALLOW_ALL = True
 
-CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://elearning-back.fly.dev"]
+CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://elearning-back.fly.dev", "ec2-43-201-10-59.ap-northeast-2.compute.amazonaws.com"]
 
 # Application definition
 
