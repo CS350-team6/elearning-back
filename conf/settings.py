@@ -152,7 +152,7 @@ DATABASES = {
     #     "PORT": "3306",
     # }
     # "postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable"
-    "default": dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    "default": dj_database_url.parse("postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable", conn_max_age=600)
 }
 print(DATABASE_URL)
 
