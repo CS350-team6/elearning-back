@@ -143,16 +143,16 @@ WSGI_APPLICATION = "conf.wsgi.application"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    # "default": {
-    #     "ENGINE": "django.db.backends.mysql",
-    #     "NAME": DATABASE_NAME,
-    #     "USER": "admin",
-    #     "PASSWORD": DATABASE_PASSWORD,
-    #     "HOST": "database-1.cgvpngtvlda3.ap-northeast-2.rds.amazonaws.com",
-    #     "PORT": "3306",
-    # }
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": DATABASE_NAME,
+        "USER": "admin",
+        "PASSWORD": DATABASE_PASSWORD,
+        "HOST": "database-1.cgvpngtvlda3.ap-northeast-2.rds.amazonaws.com",
+        "PORT": "3306",
+    }
     # "postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable"
-    "default": dj_database_url.parse("postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable", conn_max_age=600)
+    # "default": dj_database_url.parse("postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable", conn_max_age=600)
 }
 print(DATABASE_URL)
 
