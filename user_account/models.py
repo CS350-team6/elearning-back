@@ -21,13 +21,13 @@ class JWTToken(models.Model):
         return f"JWT({self.user}) - {self.token}"
 
 class UserInfo(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
+    user = models.ForeignKey('auth.User', related_name='userinfo', on_delete=models.CASCADE)
     jwt_token = models.ForeignKey(JWTToken, on_delete=models.SET_NULL, null=True)
     nickname = models.CharField(max_length=50)
     validation_code = models.CharField(max_length=30, null=True)
 
-    def __str__(self):
-        return f"{self.user_id} - {self.nickname}"
+    # def __str__(self):
+    #     return f"{self.user_id} - {self.nickname}"
 
     #def was_published_recently(self):
     #    return self.pub_date >= timezone.now() - datetime.timedelta(days=1)
