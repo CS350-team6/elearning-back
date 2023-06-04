@@ -19,6 +19,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('token', models.BinaryField(max_length=255, unique=True)),
+                ('token', models.BinaryField(max_length=255, unique=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
             ],
@@ -28,6 +29,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('nickname', models.CharField(max_length=50)),
+                ('validation_code', models.CharField(max_length=30, null=True)),
                 ('validation_code', models.CharField(max_length=30, null=True)),
                 ('jwt_token', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='user_account.jwttoken')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='userinfo', to=settings.AUTH_USER_MODEL)),
