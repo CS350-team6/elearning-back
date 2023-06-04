@@ -6,6 +6,7 @@ class Video(models.Model):
     year = models.CharField(max_length=4, default='2023')
     semester = models.CharField(max_length=10, default='spring')
     lecture = models.CharField(max_length=100, default='lecture')
+    instructor = models.CharField(max_length=100, default='instructor')
     thumbnail = models.FileField()
     play_count = models.IntegerField(default=0)
     like_count = models.IntegerField(default=0)
