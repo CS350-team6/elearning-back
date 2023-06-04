@@ -34,7 +34,6 @@ def generate_jwt_token(user, user_id):
 
     # Return the generated token as a string
     return JWT
-    #jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
