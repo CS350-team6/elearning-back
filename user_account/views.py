@@ -27,6 +27,7 @@ def generate_jwt_token(user, user_id):
 
     # Generate the JWT token using the secret key defined in Django settings
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+   
     JWT = JWTToken.objects.create(
         token = token,
         user = user
@@ -41,77 +42,95 @@ class UserViewSet(viewsets.ModelViewSet):
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
+    @action(detail=False, methods=['post'])
+    def signup(self, request):
+        content = json.loads(request.body)
+        
+        try:
+            user = User.objects.create_user(
+            username = content['userId'],
+            password = content['userPw'],
+            )
+            user.save()
+        except:
+            return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild", "errmsg": "Signup already done with same Id"}))
+       
+        JWT = generate_jwt_token(user, content['userId'])
+    
+        extended_user = UserInfo.objects.create(
+            user = user,
+            jwt_token = JWT,
+            nickname = user.username.split("@")[0]
+        )
+        extended_user.save()
+        return HttpResponse(json.dumps({'result': "true", "jwt": JWT.token}))  
+          
+    @action(detail=False, methods=['post'])
+    def login(self, request):
+        content = json.loads(request.body)
+        user = authenticate(request, username=content['userId'], password=content['userPw'])
+        if user is not None:
+            auth.login(request, user)
+            extended_user = UserInfo.objects.get(user_id=user)
+            token_string = str(extended_user.jwt_token)
+            return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
+        else:
+            return HttpResponse(json.dumps({'result': "false", "jwt": "Invalid", "errmsg": "Invalid login credentials"}))
+
     @action(detail=False, methods=['get'])
     def islogin(request):
         content= json.loads(request.body)
-        token= content['jwt'].encode('utf-8')
+        token= content['jwtToken'].encode('utf-8')
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         try:
             user = User.objects.get(username=payload["user_id"])
         except:
-            return HttpResponse(json.dumps({'result': "false"}))
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
         if user is not None and request.user.is_authenticated:
             extended_user = UserInfo.objects.get(user_id=user)
             return HttpResponse(json.dumps({'userId':user.username,
                                             'userPw':user.password,    
                                             'userNick':extended_user.nickname,
-                                            'userProfile':extended_user.profile_image,
-                                            'userSubscribe':extended_user.subscribe_num,
                                             'userRole':extended_user.user_role}))
         else:
-            return HttpResponse(json.dumps({'result': "false"}))
-      
-    @action(detail=False, methods=['post'])
-    def login(self, request):
-        content = json.loads(request.body)
-        user = authenticate(username=content['userId'], password=content['userPw'])
-        if user is not None:
-            login(request, user)
-            JWT = generate_jwt_token(user, user.id)
-            return Response(JWT.token, status=200)
-        else:
-            return Response("Invalid login credentials", status=400)
-        
-    @action(detail=False, methods=['post'])
-    def signup(self, request):
-        content = json.loads(request.body)
-        user = User.objects.create_user(username= content['userId'], password= content['userPw'])
-        user.save()
-        # userinfo = UserInfo.objects.create(
-        #     user = user,
-        #     nickname = content['nickname']
-        # )
-        # userinfo.save()
-        JWT = generate_jwt_token(user, user.id)
-        return Response(JWT.token, status=200)
-    
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "Does not login yet"}))
+
     @action(detail=False, methods=['post'])
     def logout(self, request):
         content = json.loads(request.body)
-        JWT = JWTToken.objects.get(token=content['token'])
-        JWT.delete()
-        return Response("Success", status=200)
+        auth.logout(request)
+        return HttpResponse(json.dumps({'result': "true"}))
     
-    @action(detail=False, methods=['post'])
-    def check(self, request):
-        content = json.loads(request.body)
+    @action(detail=False, methods=['delete'])
+    def withdraw_account(request):
+        content= json.loads(request.body)
+        token= content['jwtToken'].encode('utf-8')
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         try:
-            JWT = JWTToken.objects.get(token=content['token'])
-            return Response("Success", status=200)
+            user = User.objects.get(username=payload["user_id"])
         except:
-            return Response("Fail", status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
         
+        if user is not None:
+            extended_user = UserInfo.objects.get(user_id=user)
+            extended_user.jwt_token.delete()
+            extended_user.user.delete()
+            extended_user.delete()
+            return HttpResponse(json.dumps({'result': "true"}))
+        else:
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
+
     @action(detail=False, methods=['patch'])
     def pwchange(self, request):
         content= json.loads(request.body)
-        token= content['jwt'].encode('utf-8')
+        token= content['jwtToken'].encode('utf-8')
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         user = authenticate(request, username=payload["user_id"], password=content["userPw"])
         if user is not None:
-            user.set_password(content["newPassword"])
+            user.set_password(content["newPw"])
             user.save()
-            return Response(json.dumps({'result': "true"}), status=200)
-        return Response(json.dumps({'result': "false"}), status=400)
+            return HttpResponse(json.dumps({'result': "true"}))
+        return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
     
     @action(detail=False, methods=['post'])
     def pwreset(self, request):
@@ -120,15 +139,41 @@ class UserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(username=username)
         except:
-            return Response(json.dumps({'result': "false"}), status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
         
-        if user.username==content["username"]:
-            temp_password = User.objects.make_random_password()
-            user.set_password(temp_password)
-            user.save()
-            send_mail(subject="Email for password reset",message=f"Your password is reset to {temp_password}", from_email="e.learning.platform.team@gmail.com", recipient_list=[user.username],fail_silently=False)
-            return Response(json.dumps({'result': "true"}), status=200)
-        return Response(json.dumps({'result': "false"}), status=400)
+        if user is not None:
+            validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+            extended_user = UserInfo.objects.get(user_id=user)
+            extended_user.validation_code = validation_code
+            extended_user.save()
+            pwreset_page = f'http://localhost:8000/users/pwreset_with_validation/?user={username}&validation={validation_code}'         ##### The url must be changed before release.!!!!!!!!!!!!!!!!
+            send_mail(subject="Email for password reset",message=f"If you are requested to change your password, refer to here {pwreset_page}\n Otherwise, ignore it", from_email="e.learning.platform.team@gmail.com", recipient_list=[user.username],fail_silently=False)
+            return HttpResponse(json.dumps({'result': "true"}))
+        else:
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
+
+    @action(detail=False, methods=['get'])
+    def pwreset_with_validation(request):
+        username= request.GET.get('user')
+        validation_code = request.GET.get('validation') 
+        try:
+            user = User.objects.get(username=username)
+        except:
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "Invalid page"}))
+        
+        if user is not None:
+            extended_user = UserInfo.objects.get(user_id=user)
+            if extended_user.validation_code == validation_code:
+                temp_password = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+                user.set_password(temp_password)
+                user.save()
+                extended_user.validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+                extended_user.save()
+                return HttpResponse(json.dumps({'result': f'Your password is reset to {temp_password}'}))
+            else:
+                return HttpResponse(json.dumps({'result': "false", "errmsg": "Invalid page"}))
+        else:
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "Invalid page"}))
 
 class UserInfoViewset(viewsets.ModelViewSet):
     queryset = UserInfo.objects.all()
@@ -161,7 +206,6 @@ class UserInfoViewset(viewsets.ModelViewSet):
 
 # @method_decorator(csrf_exempt, name="dispatch")
 # def signup(request):
-#     if request.method == 'POST':
 #         content= json.loads(request.body)
 #         try:
 #             user = User.objects.create_user(
@@ -175,16 +219,12 @@ class UserInfoViewset(viewsets.ModelViewSet):
 #         extended_user = UserInfo.objects.create(
 #             user = user,
 #             jwt_token = new_jwt_token,
-#             nickname = "test nickname"
+#             nickname = user.username.split("@")[0]
 #         )
-#         #print("TEST")
-#         #print(str(new_jwt_token.token))
-#         #token_string = str(new_jwt_token.token).split("'")[1]
-#         token_string = str(new_jwt_token.token)
+#         token_string = new_jwt_token.token.decode('utf-8')
 #         auth.login(request, user)
 #         return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
-#     return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
-
+   
 # @method_decorator(csrf_exempt, name="dispatch")
 # def login(request):
 #     if request.method == 'POST':
@@ -195,8 +235,7 @@ class UserInfoViewset(viewsets.ModelViewSet):
 #         if user is not None:
 #             auth.login(request, user)
 #             extended_user = UserInfo.objects.get(user_id=user)
-#             #token_string = str(extended_user.jwt_token.token).split("'")[1]
-#             token_string = str(extended_user.jwt_token.token)
+#             token_string = extended_user.jwt_token.token.decode('utf-8')
 #             return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
 #         else:
 #             return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
@@ -221,6 +260,7 @@ class UserInfoViewset(viewsets.ModelViewSet):
 #             user = User.objects.get(username=payload["user_id"])
 #         except:
 #             return HttpResponse(json.dumps({'result': "false"}))
+        
 #         if user is not None:
 #             extended_user = UserInfo.objects.get(user_id=user)
 #             extended_user.jwt_token.delete()
@@ -256,18 +296,47 @@ class UserInfoViewset(viewsets.ModelViewSet):
 # def pwreset(request):
 #     if request.method == 'POST':
 #         content= json.loads(request.body)
-#         token= content['jwt'].encode('utf-8')
-#         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+#         username = content['userId']
 #         try:
-#             user = User.objects.get(username=payload["user_id"])
+#             user = User.objects.get(username=username)
 #         except:
 #             return HttpResponse(json.dumps({'result': "false"}))
         
-#         if user.username==content["userId"]:
-#             temp_password = User.objects.make_random_password()
-#             user.set_password(temp_password)
-#             user.save()
-#             send_mail(subject="Email for password reset",message=f"Your password is reset to {temp_password}", from_email="e.learning.platform.team@gmail.com", recipient_list=[user.username],fail_silently=False)
+#         if user is not None:
+#             validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+#             extended_user = UserInfo.objects.get(user_id=user)
+#             extended_user.validation_code = validation_code
+#             extended_user.save()
+#             pwreset_page = f'http://localhost:8000/user_account/pwreset_with_validation/?user={username}&validation={validation_code}'         ##### The url must be changed before release.!!!!!!!!!!!!!!!!
+#             send_mail(subject="Email for password reset",message=f"If you are requested to change your password, refer to here {pwreset_page}\n Otherwise, ignore it", from_email="e.learning.platform.team@gmail.com", recipient_list=[user.username],fail_silently=False)
 #             return HttpResponse(json.dumps({'result': "true"}))
+#         else:
+#             return HttpResponse(json.dumps({'result': "false"}))
 #     else:
 #         return HttpResponse(json.dumps({'result': "false"}))
+
+# @method_decorator(csrf_exempt, name="dispatch")
+# def pwreset_with_validation(request):
+#     if request.method == 'GET':
+#         username= request.GET.get('user')
+#         validation_code = request.GET.get('validation') 
+#         try:
+#             user = User.objects.get(username=username)
+#         except:
+#             return HttpResponse(json.dumps({'result': "Invaild page"}))
+        
+#         if user is not None:
+#             extended_user = UserInfo.objects.get(user_id=user)
+#             if extended_user.validation_code == validation_code:
+#                 temp_password = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+#                 user.set_password(temp_password)
+#                 user.save()
+#                 extended_user.validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+#                 extended_user.save()
+#                 return HttpResponse(json.dumps({'result': f'Your password is reset to {temp_password}'}))
+#             else:
+#                 return HttpResponse(json.dumps({'result': "Invaild page"}))
+#         else:
+#             return HttpResponse(json.dumps({'result': "Invaild page"}))
+#     else:
+#         return HttpResponse(json.dumps({'result': "Invaild page"}))
