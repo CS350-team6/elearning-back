@@ -6,9 +6,22 @@ from .serializers import VideoSerializer
 
 class DynamicSearchFilter(filters.SearchFilter):
     def get_search_fields(self, view, request):
-        return request.GET.getlist('search_fields', ['title', 'description'])
+        return request.GET.getlist('search_fields', ['title', 'description', 'year', 'semester', 'lecture', 'instructor'])
 
 class VideoViewset(viewsets.ModelViewSet):
+    def get_queryset(self):
+        queryset = Video.objects.all()
+        year = self.request.query_params.get('year')
+        semester = self.request.query_params.get('semester')
+        lecture = self.request.query_params.get('lecture')
+        if year is not None:
+            queryset = queryset.filter(year=year)
+        if semester is not None:
+            queryset = queryset.filter(semester=semester)
+        if lecture is not None:
+            queryset = queryset.filter(lecture=lecture)
+        return queryset
+    
     filter_backends = (DynamicSearchFilter,)
     queryset = Video.objects.all()
     serializer_class = VideoSerializer

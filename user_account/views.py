@@ -97,7 +97,6 @@ class UserInfoViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
 # def generate_jwt_token(user, user_id):
-#     queryset = User.objects.all()
 #     # Set the expiration time for the token (e.g., 1 day from now)
 #     expiration = datetime.utcnow() + timedelta(days=1)
 
