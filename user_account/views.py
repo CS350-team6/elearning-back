@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-import json, jwt
+import json, jwt, logging, os, zipfile
 from datetime import datetime, timedelta
 from django.conf import settings
 from .models import UserInfo, JWTToken
@@ -76,10 +76,9 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def pwreset(self, request):
         content= json.loads(request.body)
-        token= content['jwt'].encode('utf-8')
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        username = content['userId']
         try:
-            user = User.objects.get(username=payload["user_id"])
+            user = User.objects.get(username=username)
         except:
             return Response(json.dumps({'result': "false"}), status=400)
         
@@ -182,7 +181,6 @@ class UserInfoViewset(viewsets.ModelViewSet):
 #             user = User.objects.get(username=payload["user_id"])
 #         except:
 #             return HttpResponse(json.dumps({'result': "false"}))
-        
 #         if user is not None:
 #             extended_user = UserInfo.objects.get(user_id=user)
 #             extended_user.jwt_token.delete()
