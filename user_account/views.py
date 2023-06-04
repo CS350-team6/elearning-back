@@ -1,22 +1,17 @@
 from django.shortcuts import render, redirect
-import zipfile
-
 from django.contrib import auth
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
-import json, jwt
+import json, jwt, logging, os, zipfile
 from datetime import datetime, timedelta
 from django.conf import settings
 from .models import UserInfo, JWTToken
 from django.core.mail import send_mail
-from django.http import FileResponse
+from django.http import FileResponse, JsonResponse
 from django.core.files.temp import NamedTemporaryFile
-import logging
-import os
-from django.http import JsonResponse
 # Create your views here.
 
 def generate_jwt_token(user, user_id):
@@ -57,12 +52,9 @@ def signup(request):
         extended_user = UserInfo.objects.create(
             user = user,
             jwt_token = new_jwt_token,
-            nickname = "test nickname"
+            nickname = user.username.split("@")[0]
         )
-        #print("TEST")
-        #print(str(new_jwt_token.token))
-        #token_string = str(new_jwt_token.token).split("'")[1]
-        token_string = str(new_jwt_token.token)
+        token_string = new_jwt_token.token.decode('utf-8')
         auth.login(request, user)
         return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
     return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
@@ -77,8 +69,7 @@ def login(request):
         if user is not None:
             auth.login(request, user)
             extended_user = UserInfo.objects.get(user_id=user)
-            #token_string = str(extended_user.jwt_token.token).split("'")[1]
-            token_string = str(extended_user.jwt_token.token)
+            token_string = extended_user.jwt_token.token.decode('utf-8')
             return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
         else:
             return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
@@ -139,21 +130,50 @@ def pwchange(request):
 def pwreset(request):
     if request.method == 'POST':
         content= json.loads(request.body)
-        token= content['jwt'].encode('utf-8')
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        username = content['userId']
         try:
-            user = User.objects.get(username=payload["user_id"])
+            user = User.objects.get(username=username)
         except:
             return HttpResponse(json.dumps({'result': "false"}))
         
-        if user.username==content["userId"]:
-            temp_password = User.objects.make_random_password()
-            user.set_password(temp_password)
-            user.save()
-            send_mail(subject="Email for password reset",message=f"Your password is reset to {temp_password}", from_email="e.learning.platform.team@gmail.com", recipient_list=[user.username],fail_silently=False)
+        if user is not None:
+            validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+            extended_user = UserInfo.objects.get(user_id=user)
+            extended_user.validation_code = validation_code
+            extended_user.save()
+            pwreset_page = f'http://localhost:8000/user_account/pwreset_with_validation/?user={username}&validation={validation_code}'         ##### The url must be changed before release.!!!!!!!!!!!!!!!!
+            send_mail(subject="Email for password reset",message=f"If you are requested to change your password, refer to here {pwreset_page}\n Otherwise, ignore it", from_email="e.learning.platform.team@gmail.com", recipient_list=[user.username],fail_silently=False)
             return HttpResponse(json.dumps({'result': "true"}))
+        else:
+            return HttpResponse(json.dumps({'result': "false"}))
     else:
         return HttpResponse(json.dumps({'result': "false"}))
+
+@method_decorator(csrf_exempt, name="dispatch")
+def pwreset_with_validation(request):
+    if request.method == 'GET':
+        username= request.GET.get('user')
+        validation_code = request.GET.get('validation') 
+        try:
+            user = User.objects.get(username=username)
+        except:
+            return HttpResponse(json.dumps({'result': "Invaild page"}))
+        
+        if user is not None:
+            extended_user = UserInfo.objects.get(user_id=user)
+            if extended_user.validation_code == validation_code:
+                temp_password = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+                user.set_password(temp_password)
+                user.save()
+                extended_user.validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+                extended_user.save()
+                return HttpResponse(json.dumps({'result': f'Your password is reset to {temp_password}'}))
+            else:
+                return HttpResponse(json.dumps({'result': "Invaild page"}))
+        else:
+            return HttpResponse(json.dumps({'result': "Invaild page"}))
+    else:
+        return HttpResponse(json.dumps({'result': "Invaild page"}))
 
 @method_decorator(csrf_exempt, name="dispatch")
 def searchTest(request):

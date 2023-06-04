@@ -7,7 +7,7 @@ def get_default_user():
     return None
 
 class JWTToken(models.Model):
-    token = models.CharField(max_length=255, unique=True)
+    token = models.BinaryField(max_length=255, unique=True)
     user = models.ForeignKey(User, on_delete=models.PROTECT, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -24,6 +24,7 @@ class UserInfo(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
     jwt_token = models.ForeignKey(JWTToken, on_delete=models.SET_NULL, null=True)
     nickname = models.CharField(max_length=50)
+    validation_code = models.CharField(max_length=30, null=True)
 
     def __str__(self):
         return f"{self.user_id} - {self.nickname}"
