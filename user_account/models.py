@@ -22,8 +22,11 @@ class JWTToken(models.Model):
 
 class UserInfo(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
+    user_role = models.CharField(max_length=10, default="student")
     jwt_token = models.ForeignKey(JWTToken, on_delete=models.SET_NULL, null=True)
     nickname = models.CharField(max_length=50)
+    profile_image = models.CharField(max_length=50, default="default_profile.png")
+    subscribe_num = models.IntegerField(default=0)
     validation_code = models.CharField(max_length=30, null=True)
 
     def __str__(self):

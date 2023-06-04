@@ -77,6 +77,37 @@ def login(request):
         return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild"}))
 
 @method_decorator(csrf_exempt, name="dispatch")
+def islogin(request):
+    if request.method == 'GET':
+        content= json.loads(request.body)
+        token= content['jwt'].encode('utf-8')
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+        try:
+            user = User.objects.get(username=payload["user_id"])
+        except:
+            return HttpResponse(json.dumps({'result': "false"}))
+        if user is not None and request.user.is_authenticated:
+            extended_user = UserInfo.objects.get(user_id=user)
+            print(user.username)
+            print(user.password)
+            print(extended_user.nickname)
+            print(extended_user.profile_image)
+            print(extended_user.subscribe_num) 
+            print(extended_user.user_role)
+            return HttpResponse(json.dumps({'userId':user.username,
+                                            'userPw':user.password,    
+                                            'userNick':extended_user.nickname,
+                                            'userProfile':extended_user.profile_image,
+                                            'userSubscribe':extended_user.subscribe_num,
+                                            'userRole':extended_user.user_role}))
+            ##return HttpResponse(json.dumps({'userId':{user.username}}))
+        else:
+            return HttpResponse(json.dumps({'result': "false"}))
+    else:
+        return HttpResponse(json.dumps({'result': "false"}))
+
+
+@method_decorator(csrf_exempt, name="dispatch")
 def logout(request):
     if request.method == 'PUT':
         auth.logout(request)
