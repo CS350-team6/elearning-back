@@ -15,14 +15,35 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+def generate_jwt_token(user, user_id):
+    # Set the expiration time for the token (e.g., 1 day from now)
+    expiration = datetime.utcnow() + timedelta(days=1)
+
+    # Create the payload containing user information
+    payload = {
+        'user_id': user_id,
+        'exp': expiration,
+    }
+
+    # Generate the JWT token using the secret key defined in Django settings
+    token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+    JWT = JWTToken.objects.create(
+        token = token,
+        user = user
+    )
+
+    # Return the generated token as a string
+    return JWT
+    #jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-  @action(detail=False, methods=['get'])
-  def islogin(request):
+    @action(detail=False, methods=['get'])
+    def islogin(request):
         content= json.loads(request.body)
         token= content['jwt'].encode('utf-8')
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
@@ -32,12 +53,6 @@ class UserViewSet(viewsets.ModelViewSet):
             return HttpResponse(json.dumps({'result': "false"}))
         if user is not None and request.user.is_authenticated:
             extended_user = UserInfo.objects.get(user_id=user)
-            print(user.username)
-            print(user.password)
-            print(extended_user.nickname)
-            print(extended_user.profile_image)
-            print(extended_user.subscribe_num) 
-            print(extended_user.user_role)
             return HttpResponse(json.dumps({'userId':user.username,
                                             'userPw':user.password,    
                                             'userNick':extended_user.nickname,
@@ -47,11 +62,10 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             return HttpResponse(json.dumps({'result': "false"}))
       
-
     @action(detail=False, methods=['post'])
     def login(self, request):
         content = json.loads(request.body)
-        user = authenticate(email=content['email'], password=content['password'])
+        user = authenticate(username=content['userId'], password=content['userPw'])
         if user is not None:
             login(request, user)
             JWT = generate_jwt_token(user, user.id)
@@ -62,7 +76,7 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def signup(self, request):
         content = json.loads(request.body)
-        user = User.objects.create_user(content['username'], content['email'], content['password'])
+        user = User.objects.create_user(username= content['userId'], password= content['userPw'])
         user.save()
         # userinfo = UserInfo.objects.create(
         #     user = user,
