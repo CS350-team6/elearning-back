@@ -45,7 +45,6 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def signup(self, request):
         content = json.loads(request.body)
-        
         try:
             user = User.objects.create_user(
             username = content['userId'],
