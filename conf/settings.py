@@ -91,8 +91,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     
     # local apps
-    "user_account",
-    "uploader"
+    "elearning",
 ]
 
 REST_FRAMEWORK = {
