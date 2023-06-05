@@ -10,7 +10,7 @@ from django.conf import settings
 from .models import UserInfo, JWTToken
 from django.core.mail import send_mail
 from rest_framework import viewsets, parsers, generics
-from .serializers import UserInfoSerializer, UserSerializer
+from .serializers import *
 from django.contrib.auth.models import User
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -38,23 +38,27 @@ def generate_jwt_token(user, user_id):
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    #serializer_class = UserSerializer
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     @action(detail=False, methods=['post'])
     def signup(self, request):
-        content = json.loads(request.body)
+        serializer = UserLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True) #Raise exception if serializer is not valid (whether there isn't any userId or userPw existing)
+        username = serializer.validated_data['userId']
+        password = serializer.validated_data['userPw']
+
         try:
             user = User.objects.create_user(
-            username = content['userId'],
-            password = content['userPw'],
+            username = username,
+            password = password,
             )
             user.save()
         except:
             return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild", "errmsg": "Signup already done with same Id"}))
        
-        JWT = generate_jwt_token(user, content['userId'])
+        JWT = generate_jwt_token(user, username)
     
         extended_user = UserInfo.objects.create(
             user = user,
@@ -66,8 +70,12 @@ class UserViewSet(viewsets.ModelViewSet):
           
     @action(detail=False, methods=['post'])
     def login(self, request):
-        content = json.loads(request.body)
-        user = authenticate(request, username=content['userId'], password=content['userPw'])
+        serializer = UserLoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True) #Raise exception if serializer is not valid (whether there isn't any userId or userPw existing)
+        username = serializer.validated_data['userId']
+        password = serializer.validated_data['userPw']
+
+        user = authenticate(request, username=username, password=password)
         if user is not None:
             auth.login(request, user)
             extended_user = UserInfo.objects.get(user_id=user)
