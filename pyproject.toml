@@ -18,6 +18,11 @@ drf-spectacular = "^0.26.2"
 psycopg2-binary = "^2.9.6"
 dj-database-url = "^2.0.0"
 pyjwt = "^2.7.0"
+ruff = "^0.0.271"
+djangorestframework-simplejwt = "^5.2.2"
+coreapi = "^2.3.3"
+pyyaml = "^6.0"
+factory-boy = "^3.2.1"
 
 
 [build-system]

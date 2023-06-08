@@ -1,13 +1,16 @@
 from django.contrib import auth
-from django.contrib.auth import authenticate
+from django.contrib.auth import login, authenticate
 from django.contrib.auth.models import User
-import json, jwt
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+import json, jwt, logging, os, zipfile
 from datetime import datetime, timedelta
 from django.conf import settings
-from ..models.user import UserInfo, JWTToken
+from ..models.user_info_model import UserInfo, JWTToken
 from django.core.mail import send_mail
-from rest_framework import viewsets, parsers
-from ..serializers.user import UserLoginSerializer
+from rest_framework import viewsets, parsers, generics
+from ..serializers.user_info import *
 from django.contrib.auth.models import User
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -23,8 +26,8 @@ def generate_jwt_token(user, user_id):
     }
 
     # Generate the JWT token using the secret key defined in Django settings
-    print(payload)
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+   
     JWT = JWTToken.objects.create(
         token = token,
         user = user
@@ -32,12 +35,11 @@ def generate_jwt_token(user, user_id):
 
     # Return the generated token as a string
     return JWT
-    #jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     #serializer_class = UserSerializer
-    parser_classes = [parsers.JSONParser]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     @action(detail=False, methods=['post'])
@@ -54,21 +56,18 @@ class UserViewSet(viewsets.ModelViewSet):
             )
             user.save()
         except:
-            return Response(data=json.dumps({'result': "false", "jwt": "Invaild", "errmsg": "Signup already done with same Id"}), status=400)
-        
-        print(user)
-        print(username)
-
+            return HttpResponse(json.dumps({'result': "false", "jwt": "Invaild", "errmsg": "Signup already done with same Id"}))
+       
         JWT = generate_jwt_token(user, username)
-
+    
         extended_user = UserInfo.objects.create(
             user = user,
             jwt_token = JWT,
             nickname = user.username.split("@")[0]
         )
         extended_user.save()
-        return Response(data=json.dumps({'result': "true", "jwt": JWT.token}), status=200)
-
+        return HttpResponse(json.dumps({'result': "true", "jwt": JWT.token}))  
+          
     @action(detail=False, methods=['post'])
     def login(self, request):
         serializer = UserLoginSerializer(data=request.data)
@@ -81,10 +80,10 @@ class UserViewSet(viewsets.ModelViewSet):
             auth.login(request, user)
             extended_user = UserInfo.objects.get(user_id=user)
             token_string = str(extended_user.jwt_token)
-            return Response(data=json.dumps({'result': "true", "jwt": token_string}), status=200)
+            return HttpResponse(json.dumps({'result': "true", "jwt": token_string}))
         else:
-            return Response(data=json.dumps({'result': "false", "jwt": "Invalid", "errmsg": "Invalid login credentials"}), status=400)
-    
+            return HttpResponse(json.dumps({'result': "false", "jwt": "Invalid", "errmsg": "Invalid login credentials"}))
+
     @action(detail=False, methods=['get'])
     def islogin(request):
         content= json.loads(request.body)
@@ -93,21 +92,21 @@ class UserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(username=payload["user_id"])
         except:
-            return Response(data=json.dumps({'result': "false", "errmsg": "User not found"}), status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
         if user is not None and request.user.is_authenticated:
             extended_user = UserInfo.objects.get(user_id=user)
-            return Response(data=json.dumps({'userId':user.username,
+            return HttpResponse(json.dumps({'userId':user.username,
                                             'userPw':user.password,    
                                             'userNick':extended_user.nickname,
-                                            'userRole':extended_user.user_role}), status=200)
+                                            'userRole':extended_user.user_role}))
         else:
-            return Response(data=json.dumps({'result': "false", "errmsg": "Does not login yet"}), status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "Does not login yet"}))
 
     @action(detail=False, methods=['post'])
     def logout(self, request):
         content = json.loads(request.body)
         auth.logout(request)
-        return Response(data=json.dumps({'result': "true"}), status=200)
+        return HttpResponse(json.dumps({'result': "true"}))
     
     @action(detail=False, methods=['delete'])
     def withdraw_account(request):
@@ -117,16 +116,16 @@ class UserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(username=payload["user_id"])
         except:
-            return Response(data=json.dumps({'result': "false", "errmsg": "User not found"}), status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
         
         if user is not None:
             extended_user = UserInfo.objects.get(user_id=user)
             extended_user.jwt_token.delete()
             extended_user.user.delete()
             extended_user.delete()
-            return Response(data=json.dumps({'result': "true"}), status=200)
+            return HttpResponse(json.dumps({'result': "true"}))
         else:
-            return Response(data=json.dumps({'result': "false", "errmsg": "User not found"}), status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
 
     @action(detail=False, methods=['patch'])
     def pwchange(self, request):
@@ -137,8 +136,8 @@ class UserViewSet(viewsets.ModelViewSet):
         if user is not None:
             user.set_password(content["newPw"])
             user.save()
-            return Response(data=json.dumps({'result': "true"}), status=200)
-        return Response(data=json.dumps({'result': "false", "errmsg": "User not found"}), status=400)
+            return HttpResponse(json.dumps({'result': "true"}))
+        return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
     
     @action(detail=False, methods=['post'])
     def pwreset(self, request):
@@ -147,7 +146,7 @@ class UserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(username=username)
         except:
-            return Response(data=json.dumps({'result': "false", "errmsg": "User not found"}), status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
         
         if user is not None:
             validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
@@ -156,9 +155,9 @@ class UserViewSet(viewsets.ModelViewSet):
             extended_user.save()
             pwreset_page = f'http://localhost:8000/users/pwreset_with_validation/?user={username}&validation={validation_code}'         ##### The url must be changed before release.!!!!!!!!!!!!!!!!
             send_mail(subject="Email for password reset",message=f"If you are requested to change your password, refer to here {pwreset_page}\n Otherwise, ignore it", from_email="e.learning.platform.team@gmail.com", recipient_list=[user.username],fail_silently=False)
-            return Response(data=json.dumps({'result': "true"}), status=200)
+            return HttpResponse(json.dumps({'result': "true"}))
         else:
-            return Response(data=json.dumps({'result': "false", "errmsg": "User not found"}), status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
 
     @action(detail=False, methods=['get'])
     def pwreset_with_validation(request):
@@ -167,7 +166,7 @@ class UserViewSet(viewsets.ModelViewSet):
         try:
             user = User.objects.get(username=username)
         except:
-            return Response(data=json.dumps({'result': "false", "errmsg": "Invalid page"}), status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "Invalid page"}))
         
         if user is not None:
             extended_user = UserInfo.objects.get(user_id=user)
@@ -177,8 +176,14 @@ class UserViewSet(viewsets.ModelViewSet):
                 user.save()
                 extended_user.validation_code = User.objects.make_random_password(length=20, allowed_chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789')
                 extended_user.save()
-                return Response(data=json.dumps({'result': f'Your password is reset to {temp_password}'}), status=200)
+                return HttpResponse(json.dumps({'result': f'Your password is reset to {temp_password}'}))
             else:
-                return Response(data=json.dumps({'result': "false", "errmsg": "Invalid page"}), status=400)
+                return HttpResponse(json.dumps({'result': "false", "errmsg": "Invalid page"}))
         else:
-            return Response(data=json.dumps({'result': "false", "errmsg": "Invalid page"}), status=400)
+            return HttpResponse(json.dumps({'result': "false", "errmsg": "Invalid page"}))
+
+class UserInfoViewset(viewsets.ModelViewSet):
+    queryset = UserInfo.objects.all()
+    serializer_class = UserInfoSerializer
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+    http_method_names = ['get', 'post', 'patch', 'delete']

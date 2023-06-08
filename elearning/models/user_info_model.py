@@ -1,8 +1,9 @@
 from django.db import models
 from django.utils import timezone
 from datetime import timedelta
+from ..models import user_model, lecture_model
 from django.contrib.auth.models import User
-from ..models.video import Video
+from .lecture_model import Lecture, Video
 
 def get_default_user():
     return None
@@ -22,10 +23,11 @@ class JWTToken(models.Model):
         return f"{self.token}"
 
 class UserInfo(models.Model):
-    user = models.ForeignKey('auth.User', related_name='userinfo', on_delete=models.CASCADE)
+    user = models.ForeignKey(User, related_name='userinfo', on_delete=models.CASCADE)
     user_role = models.CharField(max_length=20, default="student")
     jwt_token = models.ForeignKey(JWTToken, on_delete=models.SET_NULL, null=True)
     nickname = models.CharField(max_length=50)
+    bookmarked_lectures = models.ManyToManyField(Lecture, related_name="bookmarked_lectures", blank=True)
     bookmarked_videos = models.ManyToManyField(Video, related_name="bookmarked_users", blank=True)
     understood_videos = models.ManyToManyField(Video, related_name="understood_users", blank=True)
     notunderstood_videos = models.ManyToManyField(Video, related_name="notunderstood_users", blank=True)

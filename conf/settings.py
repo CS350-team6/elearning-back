@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 import os
-import dj_database_url
+# import dj_database_url
 from pathlib import Path
 from environ import Env
 
@@ -79,6 +79,7 @@ CSRF_TRUSTED_ORIGINS = ["http://localhost:8000", "https://elearning-back.fly.dev
 # Application definition
 
 INSTALLED_APPS = [
+    "elearning",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -88,15 +89,15 @@ INSTALLED_APPS = [
 
     # 3rd party apps
     "rest_framework",
+    "rest_framework_simplejwt",
     "drf_spectacular",
-    
     # local apps
-    "elearning",
 ]
 
 REST_FRAMEWORK = {
     # YOUR SETTINGS
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',),
 }
 
 SPECTACULAR_SETTINGS = {
@@ -163,6 +164,7 @@ DATABASES = {
 #     }
 
 
+
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
 
@@ -207,3 +209,4 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+AUTH_USER_MODEL = "auth.User"

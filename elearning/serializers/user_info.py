@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from ..models.user import UserInfo
+from ..models.user_info_model import UserInfo
 
 class UserInfoSerializer(serializers.ModelSerializer):
     

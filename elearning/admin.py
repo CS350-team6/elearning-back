@@ -1,7 +1,9 @@
 from django.contrib import admin
-from .models.user import UserInfo, JWTToken
-from .models.video import Video
+from .models import user_model, user_info_model, lecture_model
+from django.contrib.auth.models import User
 
-admin.site.register(UserInfo)
-admin.site.register(JWTToken)
-admin.site.register(Video)
+# admin.site.register(User)
+# admin.site.register(user_model.User)
+admin.site.register(user_info_model.JWTToken)
+admin.site.register(lecture_model.Video)
+admin.site.register(lecture_model.Lecture)
