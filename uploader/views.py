@@ -21,20 +21,18 @@ class LectureViewset(viewsets.ModelViewSet):
     def upload_video(self, request, pk=None):
         """Upload an video to a lecture"""
         lecture = self.get_object()
-        serializer = self.get_serializer(
-            lecture,
+        serializer = VideoSerializer(
             data=request.data
         )
-
         if serializer.is_valid():
-            serializer.save()
+            serializer.save(lecture=lecture)
             return Response(
                 serializer.data,
-                status=status.HTTP_200_OK
+                status=status.HTTP_201_CREATED
             )
 
         return Response(
-            serializer.errors,
+            {'message': 'Invalid data'},
             status=status.HTTP_400_BAD_REQUEST
         )
 class VideoViewset(viewsets.ModelViewSet):
@@ -44,15 +42,22 @@ class VideoViewset(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
     
     def get_queryset(self):
-        '''Retrieve the videos with year, semester, lecture_id'''
-        year = self.request.query_params.get('year')
-        semester = self.request.query_params.get('semester')
-        lecture_id = self.request.query_params.get('lectureId')
-        queryset = self.queryset
+        if self.action == 'search':
+            return Lecture.objects.all()
+        return self.queryset
+
+    @action(methods=['GET'], detail=False, url_path='search')
+    def search(self, request):
+        queryset = self.get_queryset()
+        year = request.query_params.get('year')
+        semester = request.query_params.get('semester')
+        title = request.query_params.get('title')
         if year:
             queryset = queryset.filter(year=year)
         if semester:
             queryset = queryset.filter(semester=semester)
-        if lecture_id:
-            queryset = queryset.filter(lecture=lecture_id)
-        return queryset
+        if title:
+            queryset = queryset.filter(title=title)
+        serializer = LectureSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    

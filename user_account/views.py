@@ -39,7 +39,7 @@ def generate_jwt_token(user, user_id):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     #serializer_class = UserSerializer
-    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     @action(detail=False, methods=['post'])
