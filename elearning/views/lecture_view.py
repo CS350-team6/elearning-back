@@ -32,6 +32,7 @@ class LectureDetail(APIView):
 
 class Lecture(APIView):
     def get(self, request):
+        # TODO: AttributeError: type object 'Lecture' has no attribute 'objects'
         queryset = Lecture.objects.all()
 
         title = request.GET.get("title")
