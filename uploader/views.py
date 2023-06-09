@@ -1,35 +1,58 @@
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import viewsets, parsers, filters
-from .models import Video
-from .serializers import VideoSerializer
+from rest_framework import viewsets, parsers, status
+from .models import Video, Lecture
+from .serializers import VideoSerializer, LectureSerializer
 
-class DynamicSearchFilter(filters.SearchFilter):
-    def get_search_fields(self, view, request):
-        return request.GET.getlist('search_fields', ['title', 'description', 'year', 'semester', 'lecture', 'instructor'])
-
-class VideoViewset(viewsets.ModelViewSet):
-    def get_queryset(self):
-        queryset = Video.objects.all()
-        year = self.request.query_params.get('year')
-        semester = self.request.query_params.get('semester')
-        lecture = self.request.query_params.get('lecture')
-        if year is not None:
-            queryset = queryset.filter(year=year)
-        if semester is not None:
-            queryset = queryset.filter(semester=semester)
-        if lecture is not None:
-            queryset = queryset.filter(lecture=lecture)
-        return queryset
-    
-    filter_backends = (DynamicSearchFilter,)
-    queryset = Video.objects.all()
-    serializer_class = VideoSerializer
-    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+class LectureViewset(viewsets.ModelViewSet):
+    serializer_class = LectureSerializer
+    queryset = Lecture.objects.all()
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-    @action(detail=False, methods=['get'])
-    def get_video(self, request):
-        video = Video.objects.all()
-        serializer = VideoSerializer(video, many=True)
-        return Response(serializer.data)
+    def get_serializer_class(self):
+        """Return appropriate serializer class"""
+        if self.action == 'upload_video':
+            return VideoSerializer
+
+        return self.serializer_class
+
+    @action(methods=['POST'], detail=True, url_path='videos')
+    def upload_video(self, request, pk=None):
+        """Upload an video to a lecture"""
+        lecture = self.get_object()
+        serializer = self.get_serializer(
+            lecture,
+            data=request.data
+        )
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            serializer.errors,
+            status=status.HTTP_400_BAD_REQUEST
+        )
+class VideoViewset(viewsets.ModelViewSet):
+    serializer_class = VideoSerializer
+    queryset = Video.objects.all()
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
+    http_method_names = ['get', 'post', 'patch', 'delete']
+    
+    def get_queryset(self):
+        '''Retrieve the videos with year, semester, lecture_id'''
+        year = self.request.query_params.get('year')
+        semester = self.request.query_params.get('semester')
+        lecture_id = self.request.query_params.get('lectureId')
+        queryset = self.queryset
+        if year:
+            queryset = queryset.filter(year=year)
+        if semester:
+            queryset = queryset.filter(semester=semester)
+        if lecture_id:
+            queryset = queryset.filter(lecture=lecture_id)
+        return queryset
