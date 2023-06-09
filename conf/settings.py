@@ -91,7 +91,6 @@ INSTALLED_APPS = [
     "drf_spectacular",
     
     # local apps
-    "fly",
     "user_account",
     "uploader"
 ]
