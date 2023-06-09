@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils import timezone
 from datetime import timedelta
-from ..models import user_model, lecture_model
 from django.contrib.auth.models import User
 from .lecture_model import Lecture, Video
 
