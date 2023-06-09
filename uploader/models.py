@@ -22,10 +22,6 @@ class Video(models.Model):
     title = models.CharField(max_length=100, default='video title')
     description = models.TextField(default='video description')
     thumbnail = models.FileField(blank=True)
-    play_count = models.IntegerField(default=0)
-    like_count = models.IntegerField(default=0)
-    understand_count = models.IntegerField(default=0)
-    notunderstand_count = models.IntegerField(default=0)
     video_file = models.FileField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -64,5 +60,11 @@ class Understand(models.Model):
 class NotUnderstand(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notunderstands', blank=True, null=True)
     video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='notunderstands', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+class VideoPlay(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='videoplays', blank=True, null=True)
+    video = models.ForeignKey(Video, on_delete=models.CASCADE, related_name='videoplays', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
