@@ -18,7 +18,7 @@ class Migration(migrations.Migration):
             name='JWTToken',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('token', models.BinaryField(max_length=255, unique=True)),
+                ('token', models.CharField(max_length=255, unique=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.PROTECT, to=settings.AUTH_USER_MODEL)),
             ],
@@ -27,6 +27,7 @@ class Migration(migrations.Migration):
             name='UserInfo',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('user_role', models.CharField(default='student', max_length=20)),
                 ('nickname', models.CharField(max_length=50)),
                 ('validation_code', models.CharField(max_length=30, null=True)),
                 ('jwt_token', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='user_account.jwttoken')),
