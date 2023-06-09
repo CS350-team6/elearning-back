@@ -1,10 +1,11 @@
 from django.urls import path
 from . import views
 from rest_framework.routers import SimpleRouter
-from .views import UserInfoViewset, UserViewSet
+from .views import UserInfoViewset, UserViewSet, DefaultUserViewset
 
 router = SimpleRouter()
 router.register('info', UserInfoViewset)
+router.register('default', DefaultUserViewset)
 router.register('', UserViewSet)
 # router.register('home', views.home)
 # router.register('signup', views.signup)
