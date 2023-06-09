@@ -3,6 +3,7 @@
 # Core Django imports
 from django.urls import path
 from django.shortcuts import get_object_or_404
+
 # Third-party imports
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -14,6 +15,7 @@ from ..services import lecture_service
 class LectureDetail(APIView):
     def get_object(self, pk):
         return get_object_or_404(Lecture, pk=pk)
+    
     def get(self, request, pk, format=None):
         lecture_model = self.get_object(pk)
         lecture_info_dict = lecture_service.get_lecture_info_from_lecture_model(lecture_model)
