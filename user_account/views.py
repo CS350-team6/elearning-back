@@ -186,13 +186,13 @@ class UserInfoViewset(viewsets.ModelViewSet):
     queryset = UserInfo.objects.all()
     serializer_class = UserInfoSerializer
     parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get']
 
 class DefaultUserViewset(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
-    http_method_names = ['get', 'post', 'patch', 'delete']
+    http_method_names = ['get']
 
 # def generate_jwt_token(user, user_id):
 #     queryset = User.objects.all()

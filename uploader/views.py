@@ -1,8 +1,8 @@
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets, parsers, status
-from .models import Video, Lecture
-from .serializers import VideoSerializer, LectureSerializer
+from .models import Video, Lecture, Comment, Watchlist, Like, Understand, NotUnderstand
+from .serializers import VideoSerializer, LectureSerializer, CommentSerializer, WatchlistSerializer, LikeSerializer, UnderstandSerializer, NotUnderstandSerializer
 
 class LectureViewset(viewsets.ModelViewSet):
     serializer_class = LectureSerializer
@@ -35,6 +35,7 @@ class LectureViewset(viewsets.ModelViewSet):
             {'message': 'Invalid data'},
             status=status.HTTP_400_BAD_REQUEST
         )
+
 class VideoViewset(viewsets.ModelViewSet):
     serializer_class = VideoSerializer
     queryset = Video.objects.all()
@@ -61,3 +62,64 @@ class VideoViewset(viewsets.ModelViewSet):
         serializer = LectureSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
+    @action(methods=['POST'], detail=True, url_path='comments')
+    def upload_comment(self, request, pk=None):
+        """Upload an comment to a video"""
+        video = self.get_object()
+        serializer = CommentSerializer(
+            data=request.data
+        )
+        if serializer.is_valid():
+            serializer.save(video=video, user=request.user)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            {'message': 'Invalid data'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    @action(methods=['POST'], detail=True, url_path='understands')
+    def click_understand(self, request, pk=None):
+        """Click an understand to a video"""
+        video = self.get_object(pk=pk)
+        serializer = UnderstandSerializer(
+            data=request.data
+        )
+        if serializer.is_valid():
+            serializer.save(video=video, user=request.user)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            {'message': 'Invalid data'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    @action(methods=['POST'], detail=True, url_path='not-understands')
+    def click_notunderstand(self, request, pk=None):
+        """Click an notunderstand to a video"""
+        video = self.get_object()
+        serializer = NotUnderstandSerializer(
+            data=request.data
+        )
+        if serializer.is_valid():
+            serializer.save(video=video, user=request.user)
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            {'message': 'Invalid data'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+class CommentViewset(viewsets.ModelViewSet):
+    serializer_class = CommentSerializer
+    queryset = Comment.objects.all()
+    http_method_names = ['get', 'post', 'patch', 'delete']
