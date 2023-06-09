@@ -26,3 +26,7 @@ class UserInfoSerializer(serializers.Serializer):
         model = UserInfo
         fields = '__all__'
 
+class UserSerializer(serializers.Serializer):
+    class Meta:
+        model = User
+        fields = '__all__'

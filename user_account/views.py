@@ -132,7 +132,7 @@ class UserViewSet(viewsets.ModelViewSet):
         content= json.loads(request.body)
         token= content['jwtToken'].encode('utf-8')
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        user = authenticate(request, username=payload["user_id"], password=content["userPw"])
+        user = authenticate(request, username=payload["userId"], password=content["userPw"])
         if user is not None:
             user.set_password(content["newPw"])
             user.save()
@@ -186,6 +186,11 @@ class UserInfoViewset(viewsets.ModelViewSet):
     queryset = UserInfo.objects.all()
     serializer_class = UserInfoSerializer
     parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+    http_method_names = ['get', 'post', 'patch', 'delete']
+
+class DefaultUserViewset(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     http_method_names = ['get', 'post', 'patch', 'delete']
 
 # def generate_jwt_token(user, user_id):
