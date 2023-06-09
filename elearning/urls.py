@@ -12,7 +12,8 @@ from .views import user_view, lecture_view
 
 router = SimpleRouter()
 router.register('users', user_view.UserViewSet)
-urlpatterns = [
+urlpatterns = router.urls
+urlpatterns += [
     path('lectures', lecture_view.Lecture.as_view()),
     path('lectures/<int:pk>', lecture_view.LectureDetail.as_view()),
 ]
