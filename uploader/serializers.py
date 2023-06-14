@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Video, Lecture, Comment, Watchlist, Like, Understand, NotUnderstand
 
 class CommentSerializer(serializers.ModelSerializer):
-     
+
     class Meta:
         model = Comment
         fields = '__all__'

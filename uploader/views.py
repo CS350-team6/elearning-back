@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import viewsets, parsers, status
@@ -62,25 +63,6 @@ class VideoViewset(viewsets.ModelViewSet):
         serializer = LectureSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
-    @action(methods=['POST'], detail=True, url_path='comments')
-    def upload_comment(self, request, pk=None):
-        """Upload an comment to a video"""
-        video = self.get_object()
-        serializer = CommentSerializer(
-            data=request.data
-        )
-        if serializer.is_valid():
-            serializer.save(video=video, user=request.user)
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
-
-        return Response(
-            {'message': 'Invalid data'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
     @action(methods=['POST'], detail=True, url_path='understands')
     def click_understand(self, request, pk=None):
         """Click an understand to a video"""
@@ -123,3 +105,55 @@ class CommentViewset(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     queryset = Comment.objects.all()
     http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.action == "list" or "retrieve":
+            return CommentSerializer
+        return CommentSerializer
+
+    @action(methods=['POST'], detail=True, url_path='comments')
+    def upload_comment(self, request, pk=None):
+        """Upload an comment to a video"""
+        serializer = CommentSerializer(
+            data=request.data
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(
+            {'message': 'Invalid data'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    '''
+    @action(methods=['PUT'], detail=True, url_path='comments/<id>')
+    def update_comment(self, request, pk=None):
+        """Update an comment to a video"""
+        comment = get_object_or_404(Comment, pk=id)
+        serializer = CommentSerializer(
+            comment, data=request.data
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                serializer.data,
+                status=status.HTTP_200_OK
+            )
+
+        return Response(
+            {'message': 'Invalid data'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    @action(methods=['DELETE'], detail=True, url_path='comments/<id>')
+    def delete_comment(self, request, pk=None):
+        """Update an comment to a video"""
+        comment = get_object_or_404(Comment, pk=id)
+        comment.delete()
+        return Response(
+            status=status.HTTP_202_ACCEPTED
+        )
+    '''
