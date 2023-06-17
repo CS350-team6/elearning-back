@@ -67,7 +67,7 @@ class UserViewSet(viewsets.ModelViewSet):
         )
         extended_user.save()
         return HttpResponse(json.dumps({'result': "true", "jwt": JWT.token}))  
-          
+
     @action(detail=False, methods=['post'])
     def login(self, request):
         serializer = UserLoginSerializer(data=request.data)
@@ -84,7 +84,7 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             return HttpResponse(json.dumps({'result': "false", "jwt": "Invalid", "errmsg": "Invalid login credentials"}))
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'])  ###########################Do it from here
     def islogin(request):
         content= json.loads(request.body)
         token= content['jwtToken'].encode('utf-8')
