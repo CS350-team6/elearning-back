@@ -67,7 +67,7 @@ class UserViewSet(viewsets.ModelViewSet):
         )
         extended_user.save()
         return HttpResponse(json.dumps({'result': "true", "jwt": JWT.token}))  
-          
+
     @action(detail=False, methods=['post'])
     def login(self, request):
         serializer = UserLoginSerializer(data=request.data)
@@ -76,6 +76,7 @@ class UserViewSet(viewsets.ModelViewSet):
         password = serializer.validated_data['userPw']
 
         user = authenticate(request, username=username, password=password)
+
         if user is not None:
             auth.login(request, user)
             extended_user = UserInfo.objects.get(user_id=user)
@@ -84,15 +85,20 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             return HttpResponse(json.dumps({'result': "false", "jwt": "Invalid", "errmsg": "Invalid login credentials"}))
 
-    @action(detail=False, methods=['get'])
-    def islogin(request):
-        content= json.loads(request.body)
-        token= content['jwtToken'].encode('utf-8')
+    @action(detail=False, methods=['get'])  
+    def islogin(self, request):
+        ##print(request.user.is_authenticated)
+        serializer = UserJWTSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True) #Raise exception if serializer is not valid (whether there isn't any userId or jwt existing)
+        ##username = serializer.validated_data['userId']
+        jwtToken = serializer.validated_data['jwtToken']
+        token= jwtToken.encode('utf-8')
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
         try:
             user = User.objects.get(username=payload["user_id"])
         except:
             return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
+
         if user is not None and request.user.is_authenticated:
             extended_user = UserInfo.objects.get(user_id=user)
             return HttpResponse(json.dumps({'userId':user.username,
@@ -102,17 +108,24 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             return HttpResponse(json.dumps({'result': "false", "errmsg": "Does not login yet"}))
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post']) 
     def logout(self, request):
-        content = json.loads(request.body)
+        ##serializer = UserJWTSerializer(data=request.data)
+        ##serializer.is_valid(raise_exception=True) #Raise exception if serializer is not valid (whether there isn't any userId or jwt existing)
+
         auth.logout(request)
         return HttpResponse(json.dumps({'result': "true"}))
     
     @action(detail=False, methods=['delete'])
-    def withdraw_account(request):
-        content= json.loads(request.body)
-        token= content['jwtToken'].encode('utf-8')
+    def withdraw_account(self, request):
+        ##content= json.loads(request.body)
+        ##token= content['jwtToken'].encode('utf-8')
+        serializer = UserJWTSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True) #Raise exception if serializer is not valid (whether there isn't any userId or jwt existing)
+        jwtToken = serializer.validated_data['jwtToken']
+        token= jwtToken.encode('utf-8')
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+
         try:
             user = User.objects.get(username=payload["user_id"])
         except:
@@ -129,20 +142,28 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['patch'])
     def pwchange(self, request):
-        content= json.loads(request.body)
-        token= content['jwtToken'].encode('utf-8')
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        user = authenticate(request, username=payload["userId"], password=content["userPw"])
+        ##content= json.loads(request.body)
+        ##token= content['jwtToken'].encode('utf-8')
+        serializer = UserPwChangeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True) #Raise exception if serializer is not valid (whether there isn't any userId or jwt existing)
+        username = serializer.validated_data['userId']
+        password = serializer.validated_data['userPw']
+        newPassword = serializer.validated_data['newPw']
+        user = authenticate(request, username=username, password=password)
         if user is not None:
-            user.set_password(content["newPw"])
+            user.set_password(newPassword)
             user.save()
             return HttpResponse(json.dumps({'result': "true"}))
         return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
     
     @action(detail=False, methods=['post'])
     def pwreset(self, request):
-        content= json.loads(request.body)
-        username = content['userId']
+        ##content= json.loads(request.body)
+        ##username = content['userId']  
+        serializer = UserPwResetSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True) #Raise exception if serializer is not valid (whether there isn't any userId or jwt existing)
+        username = serializer.validated_data['userId']
+
         try:
             user = User.objects.get(username=username)
         except:
@@ -160,7 +181,7 @@ class UserViewSet(viewsets.ModelViewSet):
             return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
 
     @action(detail=False, methods=['get'])
-    def pwreset_with_validation(request):
+    def pwreset_with_validation(self, request):
         username= request.GET.get('user')
         validation_code = request.GET.get('validation') 
         try:
@@ -182,12 +203,12 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             return HttpResponse(json.dumps({'result': "false", "errmsg": "Invalid page"}))
 
-class UserInfoViewset(viewsets.ModelViewSet):
-    queryset = UserInfo.objects.all()
-    serializer_class = UserInfoSerializer
-    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
-    http_method_names = ['get']
-
+##class UserInfoViewset(viewsets.ModelViewSet):
+##    queryset = UserInfo.objects.all()
+    ##serializer_class = UserInfoSerializer
+##    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+##    http_method_names = ['get', 'post', 'patch', 'delete']
+    
 class DefaultUserViewset(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
