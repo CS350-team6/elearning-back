@@ -13,16 +13,17 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 import os
 import dj_database_url
 from pathlib import Path
-from environ import Env
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-env = Env()
-env_path = BASE_DIR / ".env"
-if env_path.exists():
-    with env_path.open("rt", encoding="utf8") as f:
-        env.read_env(f, overwrite=True)
+if bool(os.environ.get("DJANGO_DEVELOPMENT")):
+    env_path = os.path.join(BASE_DIR, '.env.development')
+else:
+    env_path = os.path.join(BASE_DIR, '.env.production')
+env = environ.Env()
+print(env_path)
+environ.Env.read_env(env_path)
 
 AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_S3_FILE_OVERWRITE = False
@@ -35,34 +36,20 @@ EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 
 # environment variables
-try:
-    DATABASE_URL = env('DATABASE_URL')
-    DATABASE_NAME = env("DATABASE_NAME")
-    DATABASE_PASSWORD = env("DATABASE_PASSWORD")
-    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
-    AWS_S3_CUSTOM_DOMAIN=env('AWS_S3_CUSTOM_DOMAIN')
-    AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME")
-    SECRET_KEY = env("SECRET_KEY")
-    DEBUG = env("DEBUG")
-    EMAIL_HOST_USER = env("EMAIL_ID")
-    EMAIL_HOST_PASSWORD = env("EMAIL_PWD")
-    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-except:
-    DATABASE_URL = os.getenv('DATABASE_URL')
-    DATABASE_NAME = os.getenv("DATABASE_NAME")
-    DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
-    AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-    AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
-    AWS_S3_CUSTOM_DOMAIN=os.getenv('AWS_S3_CUSTOM_DOMAIN')
-    AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
-    SECRET_KEY = os.getenv("SECRET_KEY")
-    DEBUG = os.getenv("DEBUG")
-    EMAIL_HOST_USER = os.getenv("EMAIL_ID")
-    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_PWD")
-    DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+DATABASE_URL = env("DATABASE_URL")
+DATABASE_NAME = env("DATABASE_NAME")
+DATABASE_PASSWORD = env("DATABASE_PASSWORD")
+AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
+AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
+AWS_S3_CUSTOM_DOMAIN=env('AWS_S3_CUSTOM_DOMAIN')
+AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME")
+SECRET_KEY = env("SECRET_KEY")
+DEBUG = bool(env("DEBUG"))
+DJANGO_DEVELOPMENT = bool(env("DJANGO_DEVELOPMENT"))
+EMAIL_HOST_USER = env("EMAIL_ID")
+EMAIL_HOST_PASSWORD = env("EMAIL_PWD")
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 ALLOWED_HOSTS = [
     ".ap-northeast-2.compute.amazonaws.com",
@@ -84,6 +71,7 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "whitenoise.runserver_nostatic",
     "django.contrib.staticfiles",
 
     # 3rd party apps
@@ -111,6 +99,7 @@ SPECTACULAR_SETTINGS = {
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -138,31 +127,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "conf.wsgi.application"
 
-
-# Database
-# https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-# if os.getenv("DJANGO_DEVELOPMENT"):
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+if DJANGO_DEVELOPMENT:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
     }
-}
-# else:
-#     DATABASES = {
-#     #     "default": {
-#     #         "ENGINE": "django.db.backends.mysql",
-#     #         "NAME": DATABASE_NAME,
-#     #         "USER": "admin",
-#     #         "PASSWORD": DATABASE_PASSWORD,
-#     #         "HOST": "database-1.cgvpngtvlda3.ap-northeast-2.rds.amazonaws.com",
-#     #         "PORT": "3306",
-#     #     }
-#         # "postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable"
-#         "default": dj_database_url.parse("postgres://elearning_back:y1Yeo3KpjnfgdyM@elearning-back-db.flycast:5432/elearning_back?sslmode=disable", conn_max_age=600)
-#     }
-
+else:
+    DATABASES = {
+        "default": dj_database_url.parse("postgres://postgres:RuiZDMd5ZhOCi8G@elearning-db.flycast:5432/elearning-db", conn_max_age=600),
+    }
+print(type(DJANGO_DEVELOPMENT), DJANGO_DEVELOPMENT)
+print(DATABASES)
+print(DATABASE_URL)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -198,10 +176,15 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# STATIC_URL = '/static/'
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

@@ -15,8 +15,8 @@ class UserLoginSerializer(serializers.Serializer):
         instance.userPw = validated_data.get('userPw', instance.userPw)
         instance.save()
         return instance
-    
-    class Meta:
+
+      class Meta:
         model = User
         fields = '__all__'
         # fields = ['id', 'username']
@@ -33,7 +33,7 @@ class UserJWTSerializer(serializers.Serializer):
         instance.jwtToken = validated_data.get('jwtToken', instance.jwtToken)
         instance.save()
         return instance
-    
+  
     class Meta:
         model = User
         fields = '__all__'

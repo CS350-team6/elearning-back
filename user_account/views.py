@@ -39,7 +39,7 @@ def generate_jwt_token(user, user_id):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     #serializer_class = UserSerializer
-    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     @action(detail=False, methods=['post'])
@@ -98,7 +98,7 @@ class UserViewSet(viewsets.ModelViewSet):
             user = User.objects.get(username=payload["user_id"])
         except:
             return HttpResponse(json.dumps({'result': "false", "errmsg": "User not found"}))
-        
+
         if user is not None and request.user.is_authenticated:
             extended_user = UserInfo.objects.get(user_id=user)
             return HttpResponse(json.dumps({'userId':user.username,
@@ -112,6 +112,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def logout(self, request):
         ##serializer = UserJWTSerializer(data=request.data)
         ##serializer.is_valid(raise_exception=True) #Raise exception if serializer is not valid (whether there isn't any userId or jwt existing)
+
         auth.logout(request)
         return HttpResponse(json.dumps({'result': "true"}))
     
@@ -124,7 +125,7 @@ class UserViewSet(viewsets.ModelViewSet):
         jwtToken = serializer.validated_data['jwtToken']
         token= jwtToken.encode('utf-8')
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
-        
+
         try:
             user = User.objects.get(username=payload["user_id"])
         except:
@@ -148,7 +149,6 @@ class UserViewSet(viewsets.ModelViewSet):
         username = serializer.validated_data['userId']
         password = serializer.validated_data['userPw']
         newPassword = serializer.validated_data['newPw']
-
         user = authenticate(request, username=username, password=password)
         if user is not None:
             user.set_password(newPassword)
@@ -209,6 +209,11 @@ class UserViewSet(viewsets.ModelViewSet):
 ##    parser_classes = [parsers.MultiPartParser, parsers.FormParser]
 ##    http_method_names = ['get', 'post', 'patch', 'delete']
     
+class DefaultUserViewset(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
+    http_method_names = ['get']
 
 # def generate_jwt_token(user, user_id):
 #     queryset = User.objects.all()

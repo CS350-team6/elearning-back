@@ -1,11 +1,13 @@
 from django.urls import path
 from . import views
 from rest_framework.routers import SimpleRouter
-from .views import UserViewSet   ##UserInfoViewset, 
+from .views import UserViewset, DefaultUserViewset
 
 router = SimpleRouter()
-##router.register('info', UserInfoViewset) ## Using jwt
+router.register('info', UserViewset)
+router.register('default', DefaultUserViewset)
 router.register('', UserViewSet)
+
 # router.register('home', views.home)
 # router.register('signup', views.signup)
 # router.register('login', views.login)
