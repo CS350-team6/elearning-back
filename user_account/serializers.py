@@ -21,8 +21,60 @@ class UserLoginSerializer(serializers.Serializer):
         fields = '__all__'
         # fields = ['id', 'username']
 
-class UserInfoSerializer(serializers.Serializer):
-    class Meta:
-        model = UserInfo
-        fields = '__all__'
+class UserJWTSerializer(serializers.Serializer):
+    ##userId = serializers.EmailField(required=True)
+    jwtToken = serializers.CharField(required=True)
 
+    def create(self, validated_data):
+        return User.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        ##instance.userId = validated_data.get('userId', instance.userId)
+        instance.jwtToken = validated_data.get('jwtToken', instance.jwtToken)
+        instance.save()
+        return instance
+    
+    class Meta:
+        model = User
+        fields = '__all__'
+        # fields = ['id', 'username']
+
+class UserPwChangeSerializer(serializers.Serializer):
+    ##userId = serializers.EmailField(required=True)
+    userId = serializers.EmailField(required=True)
+    userPw = serializers.CharField(required=True)
+    newPw = serializers.CharField(required=True)
+
+    def create(self, validated_data):
+        return User.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        ##instance.userId = validated_data.get('userId', instance.userId)
+        instance.userId = validated_data.get('userId', instance.userId)
+        instance.userPw = validated_data.get('userPw', instance.userPw)
+        instance.newPw = validated_data.get('newPw', instance.newPw)
+        instance.save()
+        return instance
+    
+    class Meta:
+        model = User
+        fields = '__all__'
+        # fields = ['id', 'username']
+
+class UserPwResetSerializer(serializers.Serializer):
+    ##userId = serializers.EmailField(required=True)
+    userId = serializers.EmailField(required=True)
+
+    def create(self, validated_data):
+        return User.objects.create(**validated_data)
+    
+    def update(self, instance, validated_data):
+        ##instance.userId = validated_data.get('userId', instance.userId)
+        instance.userId = validated_data.get('userId', instance.userId)
+        instance.save()
+        return instance
+    
+    class Meta:
+        model = User
+        fields = '__all__'
+        # fields = ['id', 'username']
