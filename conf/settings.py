@@ -22,7 +22,6 @@ if bool(os.environ.get("DJANGO_DEVELOPMENT")):
 else:
     env_path = os.path.join(BASE_DIR, '.env.production')
 env = environ.Env()
-print(env_path)
 environ.Env.read_env(env_path)
 
 AWS_S3_SIGNATURE_VERSION = 's3v4'
@@ -138,9 +137,6 @@ else:
     DATABASES = {
         "default": dj_database_url.parse("postgres://postgres:RuiZDMd5ZhOCi8G@elearning-db.flycast:5432/elearning-db", conn_max_age=600),
     }
-print(type(DJANGO_DEVELOPMENT), DJANGO_DEVELOPMENT)
-print(DATABASES)
-print(DATABASE_URL)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
